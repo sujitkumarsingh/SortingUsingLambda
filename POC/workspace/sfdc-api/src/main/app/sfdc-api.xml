@@ -15,8 +15,8 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
     <flow name="sfdc-api-query-by-mobile-number">
         <http:listener config-ref="HTTP_Listener_SFDC" path="/contacts" doc:name="HTTP"/>
         <logger message="#[message.inboundProperties.'http.query.params'.mobileNumber]" level="INFO" doc:name="Logger"/>
-        <custom-transformer returnClass="java.lang.String[]" class="com.tcc.transformer.sfdc.SfdcQueryBuilder" doc:name="Java"/>
-        <set-variable variableName="sfdc-query-params" value="MobilePhone = '#[ message.inboundProperties.'http.query.params'.mobileNumber]'" doc:name="Set Query Parameters"/>
+        <custom-transformer returnClass="java.lang.String" class="com.tcc.transformer.sfdc.SfdcQueryBuilder" doc:name="Java"/>
+        <set-variable variableName="sfdc-query-params" value="#[payload]" doc:name="Set Query Parameters"/>
         <logger message="#[flowVars.'sfdc-query-params']" level="INFO" doc:name="Logger"/>
         <sfdc:query config-ref="Salesforce__Basic_authentication" query="dsql:SELECT AccountId,AssistantName,AssistantPhone,Birthdate,CleanStatus,CreatedById,CreatedDate,Department,Description,Email,EmailBouncedDate,EmailBouncedReason,Fax,FirstName,HomePhone,Id,IsDeleted,IsEmailBounced,Jigsaw,JigsawContactId,Languages__c,LastActivityDate,LastCURequestDate,LastCUUpdateDate,LastModifiedById,LastModifiedDate,LastName,LastReferencedDate,LastViewedDate,LeadSource,Level__c,MailingAddress,MailingCity,MailingCountry,MailingLatitude,MailingLongitude,MailingPostalCode,MailingState,MailingStreet,MasterRecordId,MobilePhone,Name,OtherAddress,OtherCity,OtherCountry,OtherLatitude,OtherLongitude,OtherPhone,OtherPostalCode,OtherState,OtherStreet,OwnerId,Phone,PhotoUrl,ReportsToId,Salutation,SystemModstamp,Title FROM Contact WHERE #[flowVars.'sfdc-query-params'] ORDER BY LastName ASC" doc:name="Salesforce"/>
         <dw:transform-message doc:name="Transform Message">
