@@ -1,0 +1,8 @@
+package input;
+
+public class Snippet {
+	public static void main(String[] args) {
+		originalFilename
+	}
+}
+

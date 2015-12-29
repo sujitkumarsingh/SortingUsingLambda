@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd">
+    <http:listener-config name="HTTP_Listener_SFDC" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <sfdc:config name="Salesforce__Basic_authentication" username="gary.liu1119@gmail.com" password="Gary1234" securityToken="z5oF3pCfM7FXP857Z3nmvMTb4" doc:name="Salesforce: Basic authentication"/>
+    <flow name="sfdc-apiFlow">
+        <http:listener config-ref="HTTP_Listener_SFDC" path="/" doc:name="HTTP"/>
+        <sfdc:query config-ref="Salesforce__Basic_authentication" query="dsql:SELECT Address,City,CleanedByJob,CleanedByUser,ContactId,ContactStatusDataDotCom,Country,CreatedById,CreatedDate,DataDotComId,Email,FirstName,Id,IsDeleted,IsDifferentCity,IsDifferentCountry,IsDifferentCountryCode,IsDifferentEmail,IsDifferentFirstName,IsDifferentLastName,IsDifferentPhone,IsDifferentPostalCode,IsDifferentState,IsDifferentStateCode,IsDifferentStreet,IsDifferentTitle,IsFlaggedWrongAddress,IsFlaggedWrongEmail,IsFlaggedWrongName,IsFlaggedWrongPhone,IsFlaggedWrongTitle,IsInactive,IsReviewedAddress,IsReviewedEmail,IsReviewedName,IsReviewedPhone,IsReviewedTitle,LastMatchedDate,LastModifiedById,LastModifiedDate,LastName,LastStatusChangedById,LastStatusChangedDate,Latitude,Longitude,Name,Phone,PostalCode,State,Street,SystemModstamp,Title FROM ContactCleanInfo" doc:name="Salesforce"/>
+    </flow>
+</mule>
