@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http"  xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd">
+<!-- 
+    <sfdc:config name="Salesforce__Basic_authentication" username="gary.liu1119@gmail.com" password="Gary1234" securityToken="z5oF3pCfM7FXP857Z3nmvMTb4" doc:name="Salesforce: Basic authentication"/>
+ -->    
+ <jms:activemq-connector name="Active_MQ_SFDC"   brokerURL="tcp://localhost:61616" validateConnections="true" doc:name="Active MQ"/>
+    <sfdc:config name="Salesforce__Basic_authentication" username="gary.liu1119@gmail.com" password="Gary1234" securityToken="z5oF3pCfM7FXP857Z3nmvMTb4" doc:name="Salesforce: Basic authentication"/>
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <sfdc:config name="Salesforce_DEV_With_Production_Data" username="gary.liu@tccrocks.com.full" password="LiuGary1234" securityToken="zdSQhX1H44QkutOAtf6gtyjH" doc:name="Salesforce: Basic authentication" url="https://test.salesforce.com/services/Soap/u/32.0"/>
+    <sfdc:config name="Salesforce_DEV_Basic" username="gary.liu@tccrocks.com.ness" password="GaryLiu1234" securityToken="qh9UKv5rysqRzR6vsl7DBwkF" url="https://test.salesforce.com/services/Soap/u/32.0" doc:name="Salesforce: Basic authentication"/>
+    <flow name="sfdcCreateAccountsFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/sfdc/accounts" allowedMethods="POST" doc:name="HTTP"/>
+        <logger level="INFO" doc:name="Logger"/>
+        <dw:transform-message metadata:id="6ad034a5-d089-4516-8264-809e54063f84" doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <sfdc:create config-ref="Salesforce__Basic_authentication" type="Account" doc:name="Salesforce">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:create>
+        <logger level="INFO" doc:name="Logger" message="#[payload]"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload map {
+	"id" : $.id,
+	"succes" : $.success,
+	"errors" : $.errors,
+	"errorMessage" : $.errors.message,
+	"errorFields" : $.errors.fields,
+	"errorStatusCode": $.errors.statusCode
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="sfdcUpsertAccountsFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/sfdc/accounts/upsert" allowedMethods="POST" doc:name="HTTP"/>
+        <logger level="INFO" doc:name="Logger"/>
+        <dw:transform-message metadata:id="74b5d229-5ef3-45c3-8a50-80de6cabde67" doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <sfdc:upsert config-ref="Salesforce__Basic_authentication" externalIdFieldName="AccountNumber" type="Account" doc:name="Salesforce">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:upsert>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload map {
+	"id" : $.id,
+	"succes" : $.success,
+	"errors" : $.errors,
+	"errorMessage" : $.errors.message,
+	"errorFields" : $.errors.fields,
+	"errorStatusCode": $.errors.statusCode
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger level="INFO" doc:name="Logger"/>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <logger message="#[exception]" level="INFO" doc:name="Logger"/>
+            <set-payload value="#[payload]" doc:name="Set Payload"/>
+            <foreach doc:name="For Each">
+                <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+                <json:object-to-json-transformer doc:name="Object to JSON"/>
+                <jms:outbound-endpoint queue="sfdc.dead.letter" connector-ref="Active_MQ_SFDC" doc:name="Send Message To ActiveMQ"/>
+            </foreach>
+            <scripting:component doc:name="Groovy">
+                <scripting:script engine="Groovy"><![CDATA[org.apache.log4j.Logger.getLogger("").error("\n\n------ERROR WITH UPSERT INTO SALESFORCE-------\n\n");
+org.apache.log4j.Logger.getLogger("").error(org.mule.util.ExceptionUtils.getFullStackTrace(exception));
+]]></scripting:script>
+            </scripting:component>
+            <set-payload value="#[exception.toString()]" doc:name="Set Payload"/>
+            <dw:transform-message doc:name="Transform Message">
+                <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	"ErrorCode" : "1101",
+	"ErrorMessage" : payload
+}]]></dw:set-payload>
+            </dw:transform-message>
+            <logger level="INFO" doc:name="Logger"/>
+        </catch-exception-strategy>
+    </flow>
+    <flow name="sfdcRetrieveAccountsFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/sfdc" allowedMethods="GET" doc:name="HTTP"/>
+        <custom-transformer returnClass="java.lang.String" class="com.tcc.transformer.sfdc.SfdcQueryBuilderForAccounts" doc:name="Java"/>
+        <set-variable variableName="sfdc_query_filters" value="#[payload]" doc:name="Set SFDC Query Filters"/>
+        <sfdc:query config-ref="Salesforce__Basic_authentication" query="dsql:SELECT AccountNumber,AccountSource,Active__c,AnnualRevenue,BillingAddress,BillingCity,BillingCountry,BillingLatitude,BillingLongitude,BillingPostalCode,BillingState,BillingStreet,CleanStatus,CreatedById,CreatedDate,CustomerPriority__c,DandbCompanyId,Description,DunsNumber,Fax,Id,Industry,IsDeleted,Jigsaw,JigsawCompanyId,LastActivityDate,LastModifiedById,LastModifiedDate,LastReferencedDate,LastViewedDate,MasterRecordId,NaicsCode,NaicsDesc,Name,NumberOfEmployees,NumberofLocations__c,OwnerId,Ownership,ParentId,Phone,PhotoUrl,Rating,SLAExpirationDate__c,SLASerialNumber__c,SLA__c,ShippingAddress,ShippingCity,ShippingCountry,ShippingLatitude,ShippingLongitude,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,SystemModstamp,TickerSymbol,Tradestyle,Type,UpsellOpportunity__c,Website,YearStarted FROM Account #[flowVars.sfdc_query_filters]" doc:name="Salesforce"/>
+        <dw:transform-message metadata:id="f2dfdbfa-ef49-4e38-8554-f8fe5c586dae" doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload map ((payload01 , indexOfPayload01) -> {
+	AccountName: payload01.Name,
+	AccountNumber: payload01.AccountNumber,
+	BillingCity: payload01.BillingCity,
+	BillingState: payload01.BillingState,
+	BillingAddress: payload01.BillingAddress,
+	BillingCountry: payload01.BillingCountry,
+	BillingStreet: payload01.BillingStreet,
+	BillingPostalCode: payload01.BillingPostalCode,
+	ShippingAddress: payload01.ShippingAddress,
+	ShippingStreet: payload01.ShippingStreet,
+	ShippingPostalCode: payload01.ShippingPostalCode,
+	ShippingState: payload01.ShippingState,
+	Phone: payload01.Phone,
+	ShippingCountry: payload01.ShippingCountry,
+	ShippingCity: payload01.ShippingCity,
+	Type: payload01.Type
+})]]></dw:set-payload>
+        </dw:transform-message>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="sfdcRetrieveAccountsAllAttributesFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/sfdc/accounts" doc:name="HTTP" allowedMethods="GET"/>
+        <custom-transformer returnClass="java.lang.String" class="com.tcc.transformer.sfdc.SfdcQueryBuilderForAccounts" doc:name="Java"/>
+        <set-variable variableName="sfdc_query_filters" value="#[payload]" doc:name="Set SFDC Query Filters"/>
+        <sfdc:query config-ref="Salesforce__Basic_authentication" query="dsql:SELECT AccountNumber,AccountSource,Active__c,AnnualRevenue,BillingAddress,BillingCity,BillingCountry,BillingLatitude,BillingLongitude,BillingPostalCode,BillingState,BillingStreet,CleanStatus,CreatedById,CreatedDate,CustomerPriority__c,DandbCompanyId,Description,DunsNumber,Fax,Id,Industry,IsDeleted,Jigsaw,JigsawCompanyId,LastActivityDate,LastModifiedById,LastModifiedDate,LastReferencedDate,LastViewedDate,MasterRecordId,NaicsCode,NaicsDesc,Name,NumberOfEmployees,NumberofLocations__c,OwnerId,Ownership,ParentId,Phone,PhotoUrl,Rating,SLAExpirationDate__c,SLASerialNumber__c,SLA__c,ShippingAddress,ShippingCity,ShippingCountry,ShippingLatitude,ShippingLongitude,ShippingPostalCode,ShippingState,ShippingStreet,Sic,SicDesc,Site,SystemModstamp,TickerSymbol,Tradestyle,Type,UpsellOpportunity__c,Website,YearStarted FROM Account #[flowVars.sfdc_query_filters]" doc:name="Retrieve Accounts"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload]]></dw:set-payload>
+        </dw:transform-message>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="sfdc_integrationFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/sfdc/opportunites" allowedMethods="GET" doc:name="HTTP"/>
+        <logger level="INFO" doc:name="Logger"/>
+        <custom-transformer returnClass="java.lang.String" class="com.tcc.transformer.sfdc.SfdcQueryBuilderForAccounts" doc:name="Query Filter Transformer"/>
+        <set-variable variableName="sfdc_query_filters" value="#[payload]" doc:name="Set SFDC Query Filters"/>
+        <sfdc:query config-ref="Salesforce_DEV_With_Production_Data" query="dsql:SELECT AccountId,Amount,CMS_Contact_Center_Rep__c,CMS_Lag_Time__c,CMS__c,CampaignId,CloseDate,Closed_Reason__c,Closed_Won_GP__c,Closed_Won_Verified__c,Comments__c,Commission__c,ContractId,Contract_Type__c,CreatedById,CreatedDate,Customer_Email__c,Customer_Name__c,Customer_Phone__c,Customer_Preferred_Method_of_Contact__c,Description,ExpectedRevenue,Fiscal,FiscalQuarter,FiscalYear,ForecastCategory,ForecastCategoryName,Gross_Profit__c,HasOpportunityLineItem,Iconic_Device_Interest__c,Id,Interest_Level__c,Internal_Comments__c,Invoice_Account_Type__c,Invoice_Commission__c,Invoice_Date_Time__c,Invoice_Gross_Profit__c,Invoice_Reconciliation_Date__c,IsClosed,IsDeleted,IsPrivate,IsWon,LastActivityDate,LastModifiedById,LastModifiedDate,LastReferencedDate,LastViewedDate,LeadSource,Minimum_Opportunity_Activity__c,Name,NextStep,No_Activity__c,Opp_Creation_to_Sale__c,Opportunity_Activity_Count__c,Opportunity_Activity_Percentage__c,OwnerId,PartnerAccountId,Pricebook2Id,Probability,Quantity__c,RQ4_Invoice_Number__c,Rating__c,RecordTypeId,Regional_Manager_Email__c,Regional_Manager_Name__c,Sales_Market_Manager_Email__c,Source__c,StageName,Store_Rep__c,Store__c,SyncedQuoteId,SystemModstamp,TCC_Store_Rep_Contact__c,TCC_Store_Rep_Email__c,TCC_Store_Rep__c,TotalOpportunityQuantity,Type,Upgrade_Date__c,Vice_President_Email__c,contactEmail__c,contactHomePhone__c,contactLatestAssetPhone__c,contactMobilePhone__c,contactName__c,contactType__c,contactWorkPhone__c,storeDistrict__c,storeNumberName__c,storeRegion__c,vicePresidentName__c FROM Opportunity #[flowVars.sfdc_query_filters] LIMIT 10" fetchSize="1" doc:name="Salesforce"/>
+        <logger level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+payload map {
+	"opportunityName" : $.Name,
+	"customerName": $.Customer_Name__c,
+	"AccountId" : $.AccountId,
+	"status": $.StageName,
+	"source": $.Source__c
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>

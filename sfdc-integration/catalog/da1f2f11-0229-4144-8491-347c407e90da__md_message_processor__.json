@@ -1,0 +1,16 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "Salesforce_DEV_With_Production_Data",
+            "typeId": "Opportunity"
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "Salesforce_DEV_With_Production_Data",
+            "typeId": "Opportunity"
+        }
+    },
+    "id": "da1f2f11-0229-4144-8491-347c407e90da",
+    "version": "5.2.0.0"
+}
